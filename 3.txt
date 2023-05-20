@@ -1,0 +1,47 @@
+sudo apt install software-properties-common
+--
+sudo apt install openmpi-bin
+sudo apt install mpich
+sudo apt-get install libopenmpi-dev
+pip install mpi4py
+mpiexec -n 4 python3 ds_3.py
+
+
+ds_3.py
+
+from mpi4py import MPI
+import numpy as np
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+# The array to be summed
+arr = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+# Split the array into N/n chunks
+chunk_size = len(arr) // size
+chunk = arr[rank*chunk_size:(rank+1)*chunk_size]
+
+# Calculate the sum of the chunk
+chunk_sum = np.sum(chunk)
+
+# Gather all the intermediate sums to the root process
+sums = comm.gather(chunk_sum, root=0)
+
+# Print the intermediate sums at each process
+print(f"Process {rank}: sum({chunk}) = {chunk_sum}")
+
+# Print the final sum at the root process
+if rank == 0:
+    final_sum = np.sum(sums)
+    print(f"Final sum: {final_sum}")
+
+
+# To Run :
+# sudo apt install software-properties-common
+# sudo apt install openmpi-bin
+# sudo apt install mpich
+# sudo apt-get install libopenmpi-dev
+# pip install mpi4py
+# mpiexec -n 4 python3 ds_3.py

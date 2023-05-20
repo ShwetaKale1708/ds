@@ -1,0 +1,180 @@
+
+
+
+
+
+Calculator.idl
+----------------------
+module CalculatorApp {
+
+    interface Calculator {
+        float add(in float x, in float y);
+        float subtract(in float x, in float y);
+        float multiply(in float x, in float y);
+        float divide(in float x, in float y);
+        void shutdown();
+    };
+
+};
+-----------------
+Calculator.java
+--
+module CalculatorApp {
+
+    interface Calculator {
+        float add(in float x, in float y);
+        float subtract(in float x, in float y);
+        float multiply(in float x, in float y);
+        float divide(in float x, in float y);
+        void shutdown();
+    };
+
+};
+------------------------
+CalculatorImpl.java
+--
+import org.omg.CORBA.*;
+import org.omg.PortableServer.*;
+import org.omg.PortableServer.POA;
+
+class CalculatorImpl extends CalculatorApp.CalculatorPOA {
+    private ORB orb;
+
+    public void setORB(ORB orb_val) {
+        orb = orb_val;
+    }
+
+    public float add(float a, float b) {
+        return a + b;
+    }
+
+    public float subtract(float a, float b) {
+        return a - b;
+    }
+
+    public float multiply(float a, float b) {
+        return a * b;
+    }
+
+    public float divide(float a, float b) {
+        return a / b;
+    }
+
+    public void shutdown() {
+        orb.shutdown(false);
+    }
+}
+
+----------------------------
+Client.java
+----
+import org.omg.CosNaming.*;
+import org.omg.CosNaming.NamingContextPackage.*;
+import org.omg.CORBA.*;
+import CalculatorApp.*;
+
+import java.io.*;
+
+public class Client {
+    public static void main(String args[]) {
+        try {
+            // create and initialize the ORB
+            ORB orb = ORB.init(args, null);
+
+            // get a reference to the root naming context
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+
+            // resolve the Calculator object from the naming service
+            NameComponent path[] = ncRef.to_name("Calculator");
+            Calculator calculator = CalculatorHelper.narrow(ncRef.resolve(path));
+
+            // invoke the methods on the remote object
+            float a = 10;
+            float b = 5;
+
+            float result = calculator.add(a, b);
+            System.out.println(a + " + " + b + " = " + result);
+
+            result = calculator.subtract(a, b);
+            System.out.println(a + " - " + b + " = " + result);
+
+            result = calculator.multiply(a, b);
+            System.out.println(a + " * " + b + " = " + result);
+
+            result = calculator.divide(a, b);
+            System.out.println(a + " / " + b + " = " + result);
+
+            calculator.shutdown();
+        } catch (Exception e) {
+            System.err.println("ERROR: " + e);
+            e.printStackTrace(System.out);
+        }
+
+        System.out.println("Client exiting...");
+    }
+}
+
+
+
+-------------------------------------
+Server.java
+--
+import org.omg.CosNaming.*;
+import org.omg.CosNaming.NamingContextPackage.*;
+import org.omg.CORBA.*;
+import CalculatorApp.*;
+
+public class Server {
+    public static void main(String args[]) {
+        try {
+            // create and initialize the ORB
+            ORB orb = ORB.init(args, null);
+
+            // create the Calculator servant object
+            CalculatorImpl calculatorImpl = new CalculatorImpl();
+
+            // get a reference to the root naming context
+            org.omg.CORBA.Object objRef = orb.resolve_initial_references("NameService");
+            NamingContextExt ncRef = NamingContextExtHelper.narrow(objRef);
+
+            // bind the Calculator object to the naming service
+            NameComponent path[] = ncRef.to_name("Calculator");
+            ncRef.rebind(path, calculatorImpl);
+
+            System.out.println("Server ready...");
+
+            // wait for invocations from clients
+            orb.run();
+        } catch (Exception e) {
+            System.err.println("ERROR: " + e);
+            e.printStackTrace(System.out);
+        }
+    }
+}
+
+class CalculatorImpl extends CalculatorPOA {
+    public float add(float x, float y) {
+        return x + y;
+    }
+
+    public float subtract(float x, float y) {
+        return x - y;
+    }
+
+    public float multiply(float x, float y) {
+        return x * y;
+    }
+
+    public float divide(float x, float y) {
+        if (y == 0) {
+            throw new ArithmeticException("Cannot divide by zero");
+        }
+        return x / y;
+    }
+
+    public void shutdown() {
+        System.exit(0);
+    }
+}
+

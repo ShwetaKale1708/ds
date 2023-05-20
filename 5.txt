@@ -1,0 +1,36 @@
+import threading
+import time
+
+class TokenRing:
+    def __init__(self, num_processes):
+        self.num_processes = num_processes
+        self.tokens = [False] * num_processes
+        self.current_process = 0
+
+    def run(self):
+        while True:
+            self.tokens[self.current_process] = True
+            print(f"Process {self.current_process} has the token.")
+            time.sleep(5)
+            self.tokens[self.current_process] = False
+            self.current_process = (self.current_process + 1) % self.num_processes
+
+    def request_token(self, process_id):
+        while not self.tokens[process_id]:
+            time.sleep(2)
+
+        print(f"Process {process_id} enters the critical section.")
+        time.sleep(2)
+        print(f"Process {process_id} exits the critical section.")
+        
+
+if __name__ == "__main__":
+    num_processes = 3
+    token_ring = TokenRing(num_processes)
+    token_ring_thread = threading.Thread(target=token_ring.run)
+    token_ring_thread.start()
+
+    for i in range(num_processes):
+        process_thread = threading.Thread(target=token_ring.request_token, args=(i,))
+        process_thread.start()
+
