@@ -1,7 +1,10 @@
-
-
-
-
+idlj -fall Calc.idl
+javac CalcServer.java WssCalculator/*.java
+orbd -ORBInitialPort 1050 orbd -ORBInitialHost localhost
+---------------
+java CalcClient -ORBInitialPort 1050 -ORBInitialHost localhost
+----------------------------
+java CalcServer -ORBInitialPort 1050 -ORBInitialHost localhost
 
 Calculator.idl
 ----------------------
